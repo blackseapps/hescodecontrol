@@ -1,0 +1,9 @@
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">https://www.turkiye.gov.tr</domain>
+        <domain includeSubdomains="true">https://heskodu.btbnext.com/api/heskodu/login</domain>
+        <domain includeSubdomains="true">https://heskodu.btbnext.com/api/heskodu/savelog</domain>
+
+
+    </domain-config>
+</network-security-config>

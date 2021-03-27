@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3498DB</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#3498DB</color>
+
+    <color name="headercolor">#3498DB</color>
+    <color name="loginbtnclickcolor">#98CBED</color>
+
+    <color name="resultSuccess">#27AE60</color>
+    <color name="resultWarning">#E74C3C</color>
+    <color name="resultnull">#828282</color>
+    <color name="transparent">#00000000</color>
+
+
+
+</resources>
