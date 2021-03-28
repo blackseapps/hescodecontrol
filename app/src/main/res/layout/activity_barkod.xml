@@ -9,6 +9,13 @@
     android:orientation="vertical"
     tools:context=".ui.Barkod.Barkod">
 
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -47,7 +54,7 @@
             android:maxLines="1"
             android:singleLine="true"
             android:textAllCaps="true"
-            android:textSize="21sp">
+            android:textSize="25sp">
 
         </EditText>
 
@@ -65,10 +72,12 @@
         </Button>
     </LinearLayout>
 
+
+
     <ImageView
         android:id="@+id/image"
         android:layout_width="wrap_content"
-        android:layout_height="170dp"
+        android:layout_height="210dp"
         android:layout_above="@id/container2"
         android:layout_marginTop="20dp"
         android:background="@color/bgcolor"
@@ -78,7 +87,7 @@
     <LinearLayout
         android:id="@+id/container2"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="130dp"
         android:layout_alignParentBottom="true"
         android:layout_marginTop="50dp"
         android:background="@color/bgcolor"
@@ -149,12 +158,7 @@
         </Button>
     </LinearLayout>
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
 
-        android:visibility="gone" />
 
     <TextView
         android:id="@+id/txtBarcodeValue"

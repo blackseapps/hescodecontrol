@@ -46,7 +46,7 @@
             android:configChanges="orientation"
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBarTheme"
-            android:windowSoftInputMode="adjustPan" />
+           />
 
         <activity
             android:name=".ui.Login.Login"

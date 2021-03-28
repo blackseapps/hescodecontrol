@@ -51,6 +51,8 @@
             android:layout_marginBottom="10dp"
             android:hint="TC Kimlik No"
             android:lines="1"
+            android:inputType="number"
+            android:maxLength="11"
             android:maxLines="1"
             android:singleLine="true"
             android:text=""></EditText>
@@ -60,7 +62,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:hint="E-Devlet Şifresi"
+            android:hint="e-Devlet Şifresi"
             android:inputType="textPassword"
             android:lines="1"
             android:maxLines="1"

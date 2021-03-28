@@ -1,5 +1,7 @@
 package com.blackseapps.heskodkontrol.ui.Barkod;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -8,17 +10,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
@@ -28,11 +35,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.blackseapps.heskodkontrol.Modal.Login;
 import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.sharedPreferences.SharedPreference;
 import com.blackseapps.heskodkontrol.ui.LoadingWeb.LoadingWeb;
-import com.blackseapps.heskodkontrol.ui.Login.Login;
+
 import com.blackseapps.heskodkontrol.ui.Result.Result;
 import com.blackseapps.heskodkontrol.utils.KeyboardEvents;
 import com.blackseapps.heskodkontrol.webview.WebApp;
@@ -65,12 +73,11 @@ public class Barkod extends AppCompatActivity {
     private boolean KEYCODE_ENTER = false;
 
     View container, container2, loading;
-    String TC, PASSWORD;
+    String TC, PASSWORD, USERNAME, LAST;
+    boolean CAMERA_FRONT = false;
 
     public Barkod() {
-        sharedPreference = new SharedPreference(Barkod.this);
-        TC = sharedPreference.getLoginInfo().getTc();
-        PASSWORD = sharedPreference.getLoginInfo().getPassword();
+
     }
 
     @Override
@@ -79,6 +86,12 @@ public class Barkod extends AppCompatActivity {
         if (cameraSource != null)
             cameraSource.stop();
     }
+
+    private View.OnTouchListener otl = new View.OnTouchListener() {
+        public boolean onTouch(View v, MotionEvent event) {
+            return true; // the listener has consumed the event
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +108,8 @@ public class Barkod extends AppCompatActivity {
         txtBarcodeValue = findViewById(R.id.txtBarcodeValue);
         mWebView = findViewById(R.id.webView);
         loading = findViewById(R.id.loading);
+
+        sharedInit();
 
         txtHesCode.setFilters(new InputFilter[]{new InputFilter.AllCaps()}); //Txt Uppper
         txtHesCode.setOnKeyListener(keyListenerEnterCode); //Enter Code
@@ -119,65 +134,85 @@ public class Barkod extends AppCompatActivity {
             }
         });
 
-        txtHesCode.addTextChangedListener(new TextWatcher() {
+        txtHesCode.setOnTouchListener(otl);
 
+
+        txtHesCode.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
-            public void afterTextChanged(Editable s) {
-            }
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
 
-            @Override
-            public void beforeTextChanged(CharSequence s, int start,
-                                          int count, int after) {
-            }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start,
-                                      int before, int count) {
+                    if (txtHesCode.getText().toString().equals("0000000000")) {
+                        Intent intent = new Intent(Barkod.this, Result.class);
+                        intent.putExtra("status", "Risklidir");
+                        startActivity(intent);
+                        txtHesCode.setText("");
+                    } else if (txtHesCode.getText().toString().equals("1111111111")) {
+                        Intent intent = new Intent(Barkod.this, Result.class);
+                        intent.putExtra("status", "Risksizdir");
+                        startActivity(intent);
+                        txtHesCode.setText("");
+                    } else if (txtHesCode.getText().toString().indexOf(';') < 0) {
+                        sendhescode(txtHesCode.getText().toString());
+                    } else {
+                        sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "input");
+                        sendhescode(txtHesCode.getText().toString().split(";")[1]);
+                    }
 
-                if (txtHesCode.getText().toString().equals("0000000000")) {
-                    Intent intent = new Intent(Barkod.this, Result.class);
-                    intent.putExtra("status", "Risklidir");
-                    startActivity(intent);
-                    txtHesCode.setText("");
-                } else if (txtHesCode.getText().toString().equals("1111111111")) {
-                    Intent intent = new Intent(Barkod.this, Result.class);
-                    intent.putExtra("status", "Risksizdir");
-                    startActivity(intent);
-                    txtHesCode.setText("");
-                } else if (KeyboardEvents.isVisible(container) && s.length() >= 10) {
                     KeyboardEvents.hide(Barkod.this);
-                    sendhescode(txtHesCode.getText().toString());
-                }
 
-                if (!KeyboardEvents.isVisible(container) && KEYCODE_ENTER) {
-                    Variables.TYPE = "input";
-                    sendhescode(txtHesCode.getText().toString().split(";")[1]);
                 }
+                return false;
             }
         });
 
         CameraOrInput();
         SingControl();
+
+    }
+
+    void sharedInit() {
+        sharedPreference = new SharedPreference(Barkod.this);
+        TC = sharedPreference.getLoginInfo().getTc();
+        PASSWORD = sharedPreference.getLoginInfo().getPassword();
+        USERNAME = sharedPreference.getLoginInfo().getUsername();
+        LAST = sharedPreference.getLoginInfo().getLast();
+
+        if (LAST.indexOf("_") > 0)
+            if (LAST.split("_")[1].equals("front"))
+                CAMERA_FRONT = true;
+            else
+                CAMERA_FRONT = false;
+
     }
 
     private void CameraOrInput() {
-        if (Variables.TYPE == "camera") {
-            Intent intent = getIntent();
-            if (intent.getBooleanExtra("devam", false) == true)
-                CameraOpen(Variables.FRONT_CAMERA);
-        } else if (Variables.TYPE == "input")
+
+        System.out.println("LOG:" + LAST);
+
+        if (LAST.split("_")[0].equals("camera")) {
+            CameraOpen(CAMERA_FRONT);
+        } else if (LAST.equals("input"))
             BarkodOpen();
     }
 
     public void _clickCamera(View view) {
 
-        if (Variables.FRONT_CAMERA)
-            Variables.FRONT_CAMERA = false;
-        else
-            Variables.FRONT_CAMERA = true;
+        if (CAMERA_FRONT) {
+            CAMERA_FRONT = false;
+            sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_back");
+        } else {
+            CAMERA_FRONT = true;
+            sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_front");
+        }
 
         BarkodOpen();
-        CameraOpen(Variables.FRONT_CAMERA);
+        CameraOpen(CAMERA_FRONT);
+
+
+        System.out.println("LOG:" + sharedPreference.getLoginInfo().getLast());
+
     }
 
     private void CameraOpen(boolean type) {
@@ -187,6 +222,19 @@ public class Barkod extends AppCompatActivity {
         toggle = true;
         camera.setImageResource(R.drawable.kamera_buyuk);
         barkod.setImageResource(R.drawable.barkod_kucuk);
+        camera.getLayoutParams().height = intToDp(84);
+        camera.getLayoutParams().width = intToDp(84);
+        ;
+        barkod.getLayoutParams().height = intToDp(64);
+        ;
+        barkod.getLayoutParams().width = intToDp(64);
+        ;
+    }
+
+    int intToDp(int px) {
+        Resources r = getResources();
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, px, r.getDisplayMetrics()));
     }
 
     private void BarkodOpen() {
@@ -210,9 +258,19 @@ public class Barkod extends AppCompatActivity {
 
         barkod.setImageResource(R.drawable.barkod_buyuk);
         camera.setImageResource(R.drawable.kamera_kucuk);
+        barkod.getLayoutParams().height = intToDp(84);
+        ;
+        barkod.getLayoutParams().width = intToDp(84);
+        ;
+        camera.getLayoutParams().height = intToDp(64);
+        ;
+        camera.getLayoutParams().width = intToDp(64);
+        ;
     }
 
     public void _clickBarkod(View view) {
+        sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "input");
+
         BarkodOpen();
     }
 
@@ -234,7 +292,7 @@ public class Barkod extends AppCompatActivity {
     }
 
     public void _signOut(View view) {
-        sharedPreference.setLoginInfo("", "", "");
+        sharedPreference.setLoginInfo("", "", "", "");
         Intent intent = new Intent(Barkod.this, Login.class);
         startActivity(intent);
         finish();
@@ -255,8 +313,10 @@ public class Barkod extends AppCompatActivity {
     }
 
     public void _iptal(View view) {
+        loading.setVisibility(View.GONE);
         Variables.LOADING_STATUS = false;
     }
+
 
     public View.OnKeyListener keyListenerEnterCode = new View.OnKeyListener() {
         @Override
@@ -379,6 +439,17 @@ public class Barkod extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        BarkodOpen();
+        CameraOpen(CAMERA_FRONT);
+
+
+        System.out.println("CAllback");
+    }
+
 
     private void initialiseDetectorsAndSources(Boolean type) {
 
@@ -400,6 +471,7 @@ public class Barkod extends AppCompatActivity {
                     if (ActivityCompat.checkSelfPermission(Barkod.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
 
                         cameraSource.start(surfaceView.getHolder());
+
                     } else {
                         ActivityCompat.requestPermissions(Barkod.this, new
                                 String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
@@ -438,19 +510,20 @@ public class Barkod extends AppCompatActivity {
                             index2 = false;
 
                             intentData = barcodes.valueAt(0).displayValue;
-                            System.out.println(intentData);
+                            System.out.println("LOG BARKOD:" + intentData);
 
                             if (intentData.indexOf("|") >= 0) {
                                 txtBarcodeValue.setText(intentData.split("\\|")[1]);
 
                                 Variables.TYPE = "camera";
 
-                                loading.setVisibility(View.VISIBLE);
-                                webView(intentData.split("\\|")[1]);
+                                // loading.setVisibility(View.VISIBLE);
 
-                              /*  Intent intent = new Intent(Barkod.this, LoadingWeb.class);
+                                //webView(intentData.split("\\|")[1]);
+
+                                Intent intent = new Intent(Barkod.this, LoadingWeb.class);
                                 intent.putExtra("hesCode", (intentData.split("\\|")[1]));
-                                startActivity(intent);*/
+                                startActivity(intent);
                             }
                         }
                     });

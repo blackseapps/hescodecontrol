@@ -1,6 +1,9 @@
 package com.blackseapps.heskodkontrol.Modal;
 
 public class Variables {
+
+
+
     public static String TYPE = "";
     public static boolean FRONT_CAMERA = true;
     public static boolean REFRESH = true;
@@ -10,8 +13,7 @@ public class Variables {
     public static String URL_QUERY = "https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama";
     public static String URL_QUERY_RESPONSE = "https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama?sonuc=Goster";
     public static String URL_TOKEN_SERVICE = "https://heskodu.btbnext.com/api/heskodu/login";
-    public static String URL_TOKEN_SAVE_LOG =  "https://heskodu.btbnext.com/api/heskodu/savelog";
-
+    public static String URL_TOKEN_SAVE_LOG = "https://heskodu.btbnext.com/api/heskodu/savelog";
 
 
     public static String E_DEVLET_SIGN_JS_CODE(String tc, String password) {
@@ -23,8 +25,7 @@ public class Variables {
     }
 
     public static String E_DEVLET_QUERY_JS_CODE(String hescode) {
-        return "jquery:$('.loginLink')[0].click();" +
-                "javascript:document.getElementById('hes_kodu').value='" + hescode + "';" +
+        return "javascript:document.getElementById('hes_kodu').value='" + hescode + "';" +
                 "javascript:document.forms['mainForm'].submit();";
     }
 

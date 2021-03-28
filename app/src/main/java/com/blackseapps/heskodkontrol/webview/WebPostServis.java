@@ -97,7 +97,7 @@ public class WebPostServis {
 
                     String username = response.replace("\"", "");
 
-                    sharedPreference.setLoginInfo(tc, password, username);
+                    sharedPreference.setLoginInfo(tc, password, username, "camera_back");
 
                     Intent intent = new Intent(context, Barkod.class);
                     context.startActivity(intent);

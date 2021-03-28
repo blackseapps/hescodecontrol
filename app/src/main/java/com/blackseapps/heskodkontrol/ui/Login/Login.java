@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
@@ -16,10 +17,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.sharedPreferences.SharedPreference;
 import com.blackseapps.heskodkontrol.ui.Barkod.Barkod;
+import com.blackseapps.heskodkontrol.ui.Result.Result;
 import com.blackseapps.heskodkontrol.utils.KeyboardEvents;
 import com.blackseapps.heskodkontrol.webview.WebApp;
 import com.blackseapps.heskodkontrol.webview.WebInterface;
@@ -35,10 +38,11 @@ public class Login extends AppCompatActivity implements WebInterface {
     private WebView mWebView;
     private ProgressBar progressBar;
     private Button send;
+    Handler handler = new Handler();
+    ;
 
     public Login() {
         data = new String[5];
-        sharedPreference = new SharedPreference(this);
         index = true;
     }
 
@@ -55,6 +59,9 @@ public class Login extends AppCompatActivity implements WebInterface {
         send = findViewById(R.id.btnsend);
         mWebView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progress);
+
+        sharedPreference = new SharedPreference(this);
+
 
         container.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,6 +82,10 @@ public class Login extends AppCompatActivity implements WebInterface {
 
                 progressBar.setVisibility(View.VISIBLE);
                 send.setEnabled(false);
+                tc.setEnabled(false);
+                password.setEnabled(false);
+                token.setEnabled(false);
+
                 index = true;
 
                 data[0] = Variables.URL_TOKEN_SERVICE;
@@ -129,8 +140,6 @@ public class Login extends AppCompatActivity implements WebInterface {
         final String giris = Variables.E_DEVLET_SIGN_JS_CODE(data[1], data[2]);
 
         mWebView.setWebViewClient(new WebViewClient() {
-
-
             public void onPageFinished(final WebView view, final String url) {
                 if (Build.VERSION.SDK_INT >= 19) {
                     view.evaluateJavascript(giris, new ValueCallback<String>() {
@@ -145,13 +154,56 @@ public class Login extends AppCompatActivity implements WebInterface {
                                     "'" + data[1] + "'," +
                                     "'" + data[2] + "');");
 
-                            send.setEnabled(true);
-                            progressBar.setVisibility(View.GONE);
                         }
                     });
                 }
             }
         });
+
+        mWebView.setWebViewClient(new WebViewClient() {
+            public void onPageFinished(final WebView view, final String url) {
+                if (Build.VERSION.SDK_INT >= 19) {
+                    view.evaluateJavascript(giris, new ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String s) {
+
+                            if (index == false) return;
+
+                            if (url.equals("https://www.turkiye.gov.tr/")) {
+                                LoadingEnd();
+                                new WebPostServis(Login.this).postLoginInfo(data[3], data[1], data[2]);
+                            }
+
+                            mWebView.addJavascriptInterface(new WebApp(Login.this), "test");
+                            mWebView.loadUrl("javascript:window.test.login(" +
+                                    "document.getElementsByName(\"submitButton\").length,'" + data[3] + "'," +
+                                    "'" + data[1] + "'," +
+                                    "'" + data[2] + "');");
+
+                            LoadingPost();
+                        }
+                    });
+                }
+            }
+        });
+
+
+    }
+
+    void LoadingEnd() {
+        tc.setEnabled(true);
+        password.setEnabled(true);
+        token.setEnabled(true);
+        send.setEnabled(true);
+        progressBar.setVisibility(View.GONE);
+    }
+
+    void LoadingPost() {
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                LoadingEnd();
+            }
+        }, 4000);
     }
 
     @Override
@@ -159,7 +211,7 @@ public class Login extends AppCompatActivity implements WebInterface {
         if (!respoonseStatus) {
             Toast.makeText(context, "Lütfen TC Kimlik ya da Şifrenizi Kontrol Ediniz.", Toast.LENGTH_LONG).show();
         } else {
-            Toast.makeText(context, "Başarılı", Toast.LENGTH_LONG).show();
+
             new WebPostServis(context).postLoginInfo(lisans, tc, password);
         }
     }

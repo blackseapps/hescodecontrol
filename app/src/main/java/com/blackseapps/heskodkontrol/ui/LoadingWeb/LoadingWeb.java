@@ -6,19 +6,23 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
 import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.ui.Barkod.Barkod;
+import com.blackseapps.heskodkontrol.ui.Result.Result;
 import com.blackseapps.heskodkontrol.webview.WebApp;
 
 public class LoadingWeb extends AppCompatActivity {
 
     private WebView mWebView;
+    private Handler handler = new Handler();
 
     public LoadingWeb() {
         Variables.LOADING_STATUS = true;
@@ -34,6 +38,7 @@ public class LoadingWeb extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent.getStringExtra("hesCode") == null)
             return;
+
 
         String hesCode = intent.getStringExtra("hesCode");
         webView(hesCode);
@@ -71,8 +76,12 @@ public class LoadingWeb extends AppCompatActivity {
 
         mWebView.loadUrl(url);
 
+        RequestCancel();
+
         final String sorgula = Variables.E_DEVLET_QUERY_JS_CODE(hesCode);
         final String sonuc = "";
+
+        mWebView.addJavascriptInterface(new WebApp(LoadingWeb.this), "compact");
 
 
         mWebView.setWebViewClient(new WebViewClient() {
@@ -81,7 +90,6 @@ public class LoadingWeb extends AppCompatActivity {
                     view.evaluateJavascript(sorgula, new ValueCallback<String>() {
                         @Override
                         public void onReceiveValue(String s) {
-                            view.addJavascriptInterface(new WebApp(LoadingWeb.this), "compact");
                         }
                     });
 
@@ -90,13 +98,24 @@ public class LoadingWeb extends AppCompatActivity {
                             @Override
                             public void onReceiveValue(String s) {
                                 view.loadUrl(Variables.E_DEVLET_QUERY_RESPONSE_JS_CODE());
-                                view.loadUrl(Variables.E_DEVLET_QUERY_NOT_RESPONSE_JS_CODE());
                             }
                         });
                     }
                 }
             }
         });
+    }
+
+    void RequestCancel() {
+
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                if (!Variables.LOADING_STATUS) return;
+                Intent intent = new Intent(LoadingWeb.this, Result.class);
+                startActivity(intent);
+                finish();
+            }
+        }, 5000);
     }
 
     public void _iptal(View view) {

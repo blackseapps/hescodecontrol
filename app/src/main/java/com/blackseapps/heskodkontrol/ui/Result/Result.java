@@ -1,6 +1,7 @@
 package com.blackseapps.heskodkontrol.ui.Result;
 
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.ui.Barkod.Barkod;
 
@@ -55,28 +57,37 @@ public class Result extends AppCompatActivity {
     void StatusControl() {
         Intent intent = getIntent();
 
+
+        if (intent.getStringExtra("status") != null)
+            if (intent.getStringExtra("status").equals("Risklidir")) {
+                tc = "********000";
+                name = "ME**** YI****";
+                status = "Risklidir";
+                hescodetxt = "0000-0000-00";
+                return;
+            } else if (intent.getStringExtra("status").equals("Risksizdir")) {
+                tc = "********000";
+                name = "ME**** YI****";
+                status = "Riskli Değil";
+                hescodetxt = "1111-1111-11";
+                return;
+            }
+
         if (intent.getStringExtra("tc") != null) {
             tc = intent.getStringExtra("tc");
             name = intent.getStringExtra("name");
             hescodetxt = intent.getStringExtra("hescode");
             status = intent.getStringExtra("status");
             date = intent.getStringExtra("date");
-        } else if (intent.getStringExtra("status").equals("Risklidir")) {
-            tc = "0000******";
-            name = "0000****";
-            status = "Risklidir";
-            hescodetxt = "0000000000";
-        } else if (intent.getStringExtra("status").equals("Risksizdir")) {
-            tc = "1111******";
-            name = "1111****";
-            status = "Riskli Değil";
-            hescodetxt = "1111111111";
+
         } else {
             tc = "Kod Geçersiz";
             name = "Kod Geçersiz";
             status = "Kod Geçersiz";
             hescodetxt = "Kod Geçersiz";
         }
+
+
     }
 
     void Result() {
@@ -93,6 +104,8 @@ public class Result extends AppCompatActivity {
             footer.setBackgroundColor(getResources().getColor(R.color.resultSuccess));
             btn.setBackgroundColor(getResources().getColor(R.color.resultSuccess));
         } else if (status.equals("Kod Geçersiz") == true) {
+            music = MediaPlayer.create(this, R.raw.gecersiz);
+            music.start();
             header.setBackgroundColor(getResources().getColor(R.color.resultnull));
             footer.setBackgroundColor(getResources().getColor(R.color.resultnull));
             btn.setBackgroundColor(getResources().getColor(R.color.resultnull));

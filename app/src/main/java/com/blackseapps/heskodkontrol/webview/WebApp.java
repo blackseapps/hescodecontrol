@@ -16,6 +16,7 @@ public class WebApp {
     String[] data = new String[7];
     SharedPreference sharedPreference;
     Login webInterface;
+    boolean index = true;
 
     public WebApp(Context ctx) {
         this.mContext = ctx;
@@ -27,9 +28,9 @@ public class WebApp {
     public void sendData(String tc, String name, String hescode, String status, String date) {
 
         if (!Variables.LOADING_STATUS) return;
-
         sharedPreference = new SharedPreference(mContext);
 
+        Variables.LOADING_STATUS=false;
 
         System.out.println("LOG STATUS:" + status);
 
@@ -55,8 +56,11 @@ public class WebApp {
 
     @JavascriptInterface
     public void sendData(String data) {
+        System.out.println("LOG: YÜKLENDİ");
+
         System.out.println("LOG COUNT:" + data);
-        if (data.equals("0")) {
+        if (data.equals("0") && index) {
+            index = false;
             Intent intent = new Intent(mContext, Result.class);
             mContext.startActivity(intent);
         }
