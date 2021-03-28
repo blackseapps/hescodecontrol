@@ -11,30 +11,42 @@ import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
+import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.ui.Barkod.Barkod;
-import com.blackseapps.heskodkontrol.utils.WebApp;
+import com.blackseapps.heskodkontrol.webview.WebApp;
 
 public class LoadingWeb extends AppCompatActivity {
 
     private WebView mWebView;
-    private String type;
+
+    public LoadingWeb() {
+        Variables.LOADING_STATUS = true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loading_web);
+
         mWebView = findViewById(R.id.webView);
 
         Intent intent = getIntent();
-        String hesCode = intent.getStringExtra("hesCode");
+        if (intent.getStringExtra("hesCode") == null)
+            return;
 
-        webview(hesCode);
+        String hesCode = intent.getStringExtra("hesCode");
+        webView(hesCode);
     }
 
-    void webview(String hesCode) {
-        String url = "https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama";
+    void webView(String hesCode) {
+
+        String url = Variables.URL_QUERY;
+
+        /**
+         *
+         * Config WebView
+         * */
 
         WebSettings settings = mWebView.getSettings();
         settings.setAllowUniversalAccessFromFileURLs(true);
@@ -59,47 +71,26 @@ public class LoadingWeb extends AppCompatActivity {
 
         mWebView.loadUrl(url);
 
-
-        final String sorgula =
-                "javascript:document.getElementById('hes_kodu').value='" + hesCode + "';" +
-                        "javascript:document.forms['mainForm'].submit();";
-
-
+        final String sorgula = Variables.E_DEVLET_QUERY_JS_CODE(hesCode);
         final String sonuc = "";
 
 
         mWebView.setWebViewClient(new WebViewClient() {
-
-
             public void onPageFinished(final WebView view, String url) {
                 if (Build.VERSION.SDK_INT >= 19) {
-
-
                     view.evaluateJavascript(sorgula, new ValueCallback<String>() {
                         @Override
                         public void onReceiveValue(String s) {
                             view.addJavascriptInterface(new WebApp(LoadingWeb.this), "compact");
-                            view.loadUrl("javascript:window.compact.sendData(document.getElementsByClassName('compact').innerText);");
-
                         }
                     });
 
-                    if (url.equals("https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama?sonuc=Goster")) {
-
+                    if (url.equals(Variables.URL_QUERY_RESPONSE)) {
                         view.evaluateJavascript(sonuc, new ValueCallback<String>() {
                             @Override
                             public void onReceiveValue(String s) {
-
-                                view.loadUrl("javascript:window.compact.sendData(" +
-                                        "document.getElementsByTagName('dd')[1].innerText," +
-                                        "document.getElementsByTagName('dd')[0].innerText," +
-                                        "document.getElementsByTagName('dd')[2].innerText," +
-                                        "document.getElementsByTagName('dd')[3].innerText," +
-                                        "document.getElementsByTagName('dd')[4].innerText);");
-
-
-                                view.loadUrl("javascript:window.compact.sendData(" +
-                                        "document.getElementsByClassName('compact').length);");
+                                view.loadUrl(Variables.E_DEVLET_QUERY_RESPONSE_JS_CODE());
+                                view.loadUrl(Variables.E_DEVLET_QUERY_NOT_RESPONSE_JS_CODE());
                             }
                         });
                     }
@@ -109,6 +100,7 @@ public class LoadingWeb extends AppCompatActivity {
     }
 
     public void _iptal(View view) {
+        Variables.LOADING_STATUS = false;
         Intent intent = new Intent(this, Barkod.class);
         startActivity(intent);
         finish();

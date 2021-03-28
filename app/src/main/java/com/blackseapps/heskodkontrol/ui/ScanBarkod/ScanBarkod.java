@@ -101,8 +101,6 @@ public class ScanBarkod extends Fragment {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-
             }
 
             @Override
@@ -125,16 +123,12 @@ public class ScanBarkod extends Fragment {
             public void receiveDetections(Detector.Detections<Barcode> detections) {
                 final SparseArray<Barcode> barcodes = detections.getDetectedItems();
                 if (barcodes.size() != 0) {
-
-
                     txtBarcodeValue.post(new Runnable() {
 
                         @Override
                         public void run() {
-
-
                             intentData = barcodes.valueAt(0).displayValue;
-                            System.out.println(intentData);
+                            System.out.println("LOG:" +intentData);
 
                             if (intentData.indexOf("|") >= 0) {
                                 txtBarcodeValue.setText(intentData.split("\\|")[1]);

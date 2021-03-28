@@ -4,18 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -28,12 +28,14 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.blackseapps.heskodkontrol.Modal.Type;
+import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.sharedPreferences.SharedPreference;
 import com.blackseapps.heskodkontrol.ui.LoadingWeb.LoadingWeb;
 import com.blackseapps.heskodkontrol.ui.Login.Login;
-import com.blackseapps.heskodkontrol.utils.WebApp;
+import com.blackseapps.heskodkontrol.ui.Result.Result;
+import com.blackseapps.heskodkontrol.utils.KeyboardEvents;
+import com.blackseapps.heskodkontrol.webview.WebApp;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -60,48 +62,62 @@ public class Barkod extends AppCompatActivity {
     private boolean toggle2 = false;
     private boolean index = true;
     private boolean index2 = true;
+    private boolean KEYCODE_ENTER = false;
 
-    public static void hideKeyboard(Activity activity) {
-        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        View view = activity.getCurrentFocus();
-        if (view == null) {
-            view = new View(activity);
-        }
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    View container, container2, loading;
+    String TC, PASSWORD;
+
+    public Barkod() {
+        sharedPreference = new SharedPreference(Barkod.this);
+        TC = sharedPreference.getLoginInfo().getTc();
+        PASSWORD = sharedPreference.getLoginInfo().getPassword();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (cameraSource != null)
+            cameraSource.stop();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_barkod);
 
-        View container = findViewById(R.id.container);
-        View container2 = findViewById(R.id.container2);
+        container = findViewById(R.id.container);
+        container2 = findViewById(R.id.container2);
         txtHesCode = findViewById(R.id.hescode);
         surfaceView = findViewById(R.id.surfaceView);
         imageView = findViewById(R.id.image);
         camera = findViewById(R.id.camera);
         barkod = findViewById(R.id.barkod);
         txtBarcodeValue = findViewById(R.id.txtBarcodeValue);
+        mWebView = findViewById(R.id.webView);
+        loading = findViewById(R.id.loading);
 
-        sharedPreference = new SharedPreference(Barkod.this);
+        txtHesCode.setFilters(new InputFilter[]{new InputFilter.AllCaps()}); //Txt Uppper
+        txtHesCode.setOnKeyListener(keyListenerEnterCode); //Enter Code
 
-
+        /** Hide Keyboard */
         container.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                hideKeyboard(Barkod.this);
+                KeyboardEvents.hide(Barkod.this);
             }
         });
-
         container2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                hideKeyboard(Barkod.this);
+                KeyboardEvents.hide(Barkod.this);
             }
         });
-
+        txtHesCode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                KeyboardEvents.hide(Barkod.this);
+            }
+        });
 
         txtHesCode.addTextChangedListener(new TextWatcher() {
 
@@ -117,53 +133,65 @@ public class Barkod extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start,
                                       int before, int count) {
-                if (s.length() >= 10) {
-                    Type.TYPE = "input";
-                    hideKeyboard(Barkod.this);
-                    _sendhescode(txtHesCode.getText().toString());
+
+                if (txtHesCode.getText().toString().equals("0000000000")) {
+                    Intent intent = new Intent(Barkod.this, Result.class);
+                    intent.putExtra("status", "Risklidir");
+                    startActivity(intent);
+                    txtHesCode.setText("");
+                } else if (txtHesCode.getText().toString().equals("1111111111")) {
+                    Intent intent = new Intent(Barkod.this, Result.class);
+                    intent.putExtra("status", "Risksizdir");
+                    startActivity(intent);
+                    txtHesCode.setText("");
+                } else if (KeyboardEvents.isVisible(container) && s.length() >= 10) {
+                    KeyboardEvents.hide(Barkod.this);
+                    sendhescode(txtHesCode.getText().toString());
+                }
+
+                if (!KeyboardEvents.isVisible(container) && KEYCODE_ENTER) {
+                    Variables.TYPE = "input";
+                    sendhescode(txtHesCode.getText().toString().split(";")[1]);
                 }
             }
         });
 
-        if (Type.TYPE == "camera") {
-            Intent intent = getIntent();
-            if (intent.getBooleanExtra("devam", false) == true)
-                CameraOpen(Type.FRONT_CAMERA);
-        } else if (Type.TYPE == "input")
-            BarkodOpen();
-
-
-
-        _SingControl();
+        CameraOrInput();
+        SingControl();
     }
 
+    private void CameraOrInput() {
+        if (Variables.TYPE == "camera") {
+            Intent intent = getIntent();
+            if (intent.getBooleanExtra("devam", false) == true)
+                CameraOpen(Variables.FRONT_CAMERA);
+        } else if (Variables.TYPE == "input")
+            BarkodOpen();
+    }
 
     public void _clickCamera(View view) {
 
-        if (Type.FRONT_CAMERA)
-            Type.FRONT_CAMERA = false;
+        if (Variables.FRONT_CAMERA)
+            Variables.FRONT_CAMERA = false;
         else
-            Type.FRONT_CAMERA = true;
+            Variables.FRONT_CAMERA = true;
 
         BarkodOpen();
-
-        CameraOpen(Type.FRONT_CAMERA);
-
-
+        CameraOpen(Variables.FRONT_CAMERA);
     }
 
-    void CameraOpen(boolean type) {
+    private void CameraOpen(boolean type) {
         initialiseDetectorsAndSources(type);
         imageView.setVisibility(View.GONE);
         surfaceView.setVisibility(View.VISIBLE);
         toggle = true;
-        camera.setBackgroundResource(R.color.resultSuccess);
-        barkod.setBackgroundResource(R.color.transparent);
+        camera.setImageResource(R.drawable.kamera_buyuk);
+        barkod.setImageResource(R.drawable.barkod_kucuk);
     }
 
-    void BarkodOpen() {
+    private void BarkodOpen() {
         if (!toggle && toggle2) return;
-        hideKeyboard(this);
+        KeyboardEvents.hide(this);
         surfaceView.setVisibility(View.GONE);
         imageView.setVisibility(View.VISIBLE);
 
@@ -180,8 +208,8 @@ public class Barkod extends AppCompatActivity {
             }
         });
 
-        barkod.setBackgroundResource(R.color.resultSuccess);
-        camera.setBackgroundResource(R.color.transparent);
+        barkod.setImageResource(R.drawable.barkod_buyuk);
+        camera.setImageResource(R.drawable.kamera_kucuk);
     }
 
     public void _clickBarkod(View view) {
@@ -199,15 +227,7 @@ public class Barkod extends AppCompatActivity {
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (cameraSource != null)
-            cameraSource.stop();
-    }
-
-
-    public void _sendhescode(String hescode) {
+    public void sendhescode(String hescode) {
         Intent intent = new Intent(this, LoadingWeb.class);
         intent.putExtra("hesCode", hescode);
         startActivity(intent);
@@ -220,28 +240,38 @@ public class Barkod extends AppCompatActivity {
         finish();
     }
 
-
-    void _SingControl() {
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                webview(sharedPreference.getLoginInfo().getTc(),
-                        sharedPreference.getLoginInfo().getPassword(),
-                        "R7G6-9154-15");
-
-                handler.postDelayed(this, ten_munite);
-            }
-        }, 100);
+    void SingControl() {
+        if (Variables.REFRESH)
+            webview(TC, PASSWORD, "R7G6-9154-15");
+        else {
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    webview(TC, PASSWORD, "R7G6-9154-15");
+                    handler.postDelayed(this, ten_munite);
+                }
+            }, ten_munite);
+        }
+        Variables.REFRESH = false;
     }
 
+    public void _iptal(View view) {
+        Variables.LOADING_STATUS = false;
+    }
+
+    public View.OnKeyListener keyListenerEnterCode = new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            if (keyCode == KeyEvent.KEYCODE_ENTER)
+                return true;
+            return false;
+        }
+    };
 
     /**
      * WEB CONTROL AND BARKOD SCAN
      */
 
-    void webview(String tc, String password, String hesCode) {
-        String url = "https://giris.turkiye.gov.tr/Giris/gir";
-        mWebView = (WebView) findViewById(R.id.webView);
-
+    void initConfigWebView() {
         WebSettings settings = mWebView.getSettings();
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setBuiltInZoomControls(false);
@@ -262,26 +292,20 @@ public class Barkod extends AppCompatActivity {
                 mWebView.setWebContentsDebuggingEnabled(true);
             }
         }
+    }
+
+    void webview(String tc, String password, String hesCode) {
+        String url = Variables.URL_EDEVLET_SIGN;
+
+        initConfigWebView();
 
         mWebView.loadUrl(url);
+        mWebView.addJavascriptInterface(new WebApp(Barkod.this), "compact");// JS INTERFACE METOD
 
-
-        final String giris = "javascript:document.getElementById('tridField').value='" + tc + "';" +
-                "javascript:document.getElementById('egpField').value='" + password + "';" +
-                "javascript:document.getElementsByName('submitButton')[0].click();" +
-                "javascript:document.getElementsByName('submitButton')[0].click();" +
-                "jquery:$('.loginLink')[0].click();";
-
-
-        final String sorgula =
-                "jquery:$('.loginLink')[0].click();" +
-                        "javascript:document.getElementById('hes_kodu').value='" + hesCode + "';" +
-                        "javascript:document.forms['mainForm'].submit();";
-
-
+        final String giris = Variables.E_DEVLET_SIGN_JS_CODE(tc, password);
+        final String sorgula = Variables.E_DEVLET_QUERY_JS_CODE(hesCode);
         final String sonuc = "";
 
-        mWebView.addJavascriptInterface(new WebApp(Barkod.this), "compact");
 
         mWebView.setWebViewClient(new WebViewClient() {
 
@@ -293,37 +317,25 @@ public class Barkod extends AppCompatActivity {
                         public void onReceiveValue(String s) {
                             if (index) {
                                 index = false;
-                                mWebView.loadUrl("https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama");
-
+                                mWebView.loadUrl(Variables.URL_QUERY);
                             }
-
-
                         }
                     });
 
-
-                    if (url.equals("https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama")) {
+                    if (url.equals(Variables.URL_QUERY)) {
                         view.evaluateJavascript(sorgula, new ValueCallback<String>() {
                             @Override
                             public void onReceiveValue(String s) {
-
-                                for (int i = 0; i < 10; i++)
-                                    mWebView.evaluateJavascript("jquery:$('.loginLink')[0].click();", null);
-
+                                mWebView.evaluateJavascript("jquery:$('.loginLink')[0].click();", null);
                                 view.loadUrl("javascript:window.compact.sendData(document.getElementsByClassName('compact').innerText);");
-
                             }
                         });
-
                     }
 
-                    if (url.equals("https://www.turkiye.gov.tr/saglik-bakanligi-hes-kodu-sorgulama?sonuc=Goster")) {
-
+                    if (url.equals(Variables.URL_QUERY_RESPONSE)) {
                         view.evaluateJavascript(sonuc, new ValueCallback<String>() {
                             @Override
                             public void onReceiveValue(String s) {
-
-
                             }
                         });
                     }
@@ -332,8 +344,43 @@ public class Barkod extends AppCompatActivity {
         });
     }
 
-    private void initialiseDetectorsAndSources(Boolean type) {
+    void webView(String hesCode) {
 
+        String url = Variables.URL_QUERY;
+        initConfigWebView();
+        mWebView.loadUrl(url);
+
+        final String sorgula = Variables.E_DEVLET_QUERY_JS_CODE(hesCode);
+        final String sonuc = "";
+
+        mWebView.addJavascriptInterface(new WebApp(Barkod.this), "compact");
+
+        mWebView.setWebViewClient(new WebViewClient() {
+            public void onPageFinished(final WebView view, String url) {
+                if (Build.VERSION.SDK_INT >= 19) {
+                    view.evaluateJavascript(sorgula, new ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String s) {
+                        }
+                    });
+
+                    if (url.equals(Variables.URL_QUERY_RESPONSE)) {
+                        view.evaluateJavascript(sonuc, new ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String s) {
+                                view.loadUrl(Variables.E_DEVLET_QUERY_RESPONSE_JS_CODE());
+                                view.loadUrl(Variables.E_DEVLET_QUERY_NOT_RESPONSE_JS_CODE());
+                                loading.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+
+    private void initialiseDetectorsAndSources(Boolean type) {
 
         barcodeDetector = new BarcodeDetector.Builder(Barkod.this)
                 .setBarcodeFormats(Barcode.ALL_FORMATS)
@@ -383,10 +430,7 @@ public class Barkod extends AppCompatActivity {
             public void receiveDetections(Detector.Detections<Barcode> detections) {
                 final SparseArray<Barcode> barcodes = detections.getDetectedItems();
                 if (barcodes.size() != 0) {
-
-
                     txtBarcodeValue.post(new Runnable() {
-
                         @Override
                         public void run() {
 
@@ -399,10 +443,14 @@ public class Barkod extends AppCompatActivity {
                             if (intentData.indexOf("|") >= 0) {
                                 txtBarcodeValue.setText(intentData.split("\\|")[1]);
 
-                                Type.TYPE = "camera";
-                                Intent intent = new Intent(Barkod.this, LoadingWeb.class);
+                                Variables.TYPE = "camera";
+
+                                loading.setVisibility(View.VISIBLE);
+                                webView(intentData.split("\\|")[1]);
+
+                              /*  Intent intent = new Intent(Barkod.this, LoadingWeb.class);
                                 intent.putExtra("hesCode", (intentData.split("\\|")[1]));
-                                startActivity(intent);
+                                startActivity(intent);*/
                             }
                         }
                     });
@@ -412,5 +460,6 @@ public class Barkod extends AppCompatActivity {
         });
 
     }
+
 
 }

@@ -4,6 +4,7 @@
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#3498DB</color>
 
+    <color name="bgcolor">#f6f7f8</color>
     <color name="headercolor">#3498DB</color>
     <color name="loginbtnclickcolor">#98CBED</color>
 

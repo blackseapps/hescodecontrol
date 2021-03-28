@@ -10,9 +10,8 @@ public class SharedPreference {
     SharedPreferences sharedpreferences;
 
     public SharedPreference(Context context) {
-        sharedpreferences = (SharedPreferences) context.getSharedPreferences("HesCodeLogin", Context.MODE_PRIVATE);
+        sharedpreferences =  context.getSharedPreferences("HesCodeLogin", Context.MODE_PRIVATE);
     }
-
 
     public void setLoginInfo(String tc, String password,String username) {
         SharedPreferences.Editor editor = sharedpreferences.edit();
@@ -24,7 +23,6 @@ public class SharedPreference {
     }
 
     public Login getLoginInfo() {
-
 
         String tc = sharedpreferences.getString("tc", "");
         String password = sharedpreferences.getString("password", "");

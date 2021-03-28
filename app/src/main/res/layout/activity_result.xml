@@ -9,23 +9,17 @@
 
 
     <LinearLayout
+        android:id="@+id/headerview"
         android:layout_width="match_parent"
         android:layout_height="150dp"
-        android:id="@+id/headerview"
         android:background="@color/resultSuccess"
+        android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="• heskodkontrol.com •"
-            android:textColor="#FFFF"
-            android:textSize="30sp">
-
-        </TextView>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="90dp"
+            android:src="@drawable/logo_header"></ImageView>
     </LinearLayout>
 
     <LinearLayout
@@ -33,12 +27,13 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:layout_weight="1"
+        android:background="@color/bgcolor"
         android:gravity="center"
         android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="150dp"
-            android:layout_height="140dp"
+            android:layout_height="240dp"
 
             android:orientation="vertical">
 
@@ -47,16 +42,18 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
                 android:layout_marginTop="15dp"
+                android:layout_marginBottom="15dp"
                 android:text="Ad Soyad"
-                android:textSize="20sp"></TextView>
+                android:textSize="25sp"></TextView>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
                 android:layout_marginTop="15dp"
+                android:layout_marginBottom="20dp"
                 android:text="TC Kimlik No"
-                android:textSize="20sp"></TextView>
+                android:textSize="23sp"></TextView>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -64,14 +61,14 @@
                 android:layout_marginLeft="15dp"
                 android:layout_marginTop="15dp"
                 android:text="HES Kodu"
-                android:textSize="20sp"></TextView>
+                android:textSize="25sp"></TextView>
 
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -81,8 +78,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
                 android:layout_marginRight="15dp"
+                android:layout_marginBottom="15dp"
                 android:enabled="false"
-                android:text="Mert KARADENİZ">
+                android:text=""
+                android:textSize="25sp">
 
             </EditText>
 
@@ -92,8 +91,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
                 android:layout_marginRight="15dp"
+                android:layout_marginBottom="15dp"
                 android:enabled="false"
-                android:text="2342423423">
+                android:text=""
+                android:textSize="25sp">
 
             </EditText>
 
@@ -105,7 +106,8 @@
                 android:layout_marginLeft="15dp"
                 android:layout_marginRight="15dp"
                 android:enabled="false"
-                android:text="DSFS-4GHS-RSFD">
+                android:text=""
+                android:textSize="25sp">
 
             </EditText>
         </LinearLayout>
@@ -122,8 +124,8 @@
         android:layout_marginBottom="15dp"
         android:background="@color/resultSuccess"
         android:onClick="_goBack"
-        android:visibility="gone"
-        android:text="Geri Dön"></Button>
+        android:text="Geri Dön"
+        android:visibility="gone"></Button>
 
     <LinearLayout
         android:id="@+id/statusview"
