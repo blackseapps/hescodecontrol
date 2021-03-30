@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -51,8 +52,6 @@ public class Login extends AppCompatActivity implements WebInterface {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        View container = findViewById(R.id.container);
-        View container2 = findViewById(R.id.container2);
         tc = findViewById(R.id.tcid);
         password = findViewById(R.id.password);
         token = findViewById(R.id.token);
@@ -62,23 +61,20 @@ public class Login extends AppCompatActivity implements WebInterface {
 
         sharedPreference = new SharedPreference(this);
 
+        tc.post(new Runnable() {
+            @Override
+            public void run() {
+                tc.requestFocus();
+            }
+        });
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
 
-        container.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardEvents.hide(Login.this);
-            }
-        });
-        container2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardEvents.hide(Login.this);
-            }
-        });
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
 
                 progressBar.setVisibility(View.VISIBLE);
                 send.setEnabled(false);
@@ -102,10 +98,11 @@ public class Login extends AppCompatActivity implements WebInterface {
     }
 
     private void singControl() {
-        if (!sharedPreference.getLoginInfo().getTc().equals("")) {
-            Intent intent = new Intent(this, Barkod.class);
-            startActivity(intent);
-        }
+        if (sharedPreference.getLoginInfo().getLast() != null)
+            if (sharedPreference.getLoginInfo().getLast().length() > 0) {
+                Intent intent = new Intent(this, Barkod.class);
+                startActivity(intent);
+            }
     }
 
     void initWeb() {
@@ -196,6 +193,14 @@ public class Login extends AppCompatActivity implements WebInterface {
         token.setEnabled(true);
         send.setEnabled(true);
         progressBar.setVisibility(View.GONE);
+        tc.post(new Runnable() {
+            @Override
+            public void run() {
+                tc.requestFocus();
+            }
+        });
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
 
     void LoadingPost() {
@@ -208,6 +213,7 @@ public class Login extends AppCompatActivity implements WebInterface {
 
     @Override
     public void LoginResponse(Context context, boolean respoonseStatus, String lisans, String tc, String password) {
+
         if (!respoonseStatus) {
             Toast.makeText(context, "Lütfen TC Kimlik ya da Şifrenizi Kontrol Ediniz.", Toast.LENGTH_LONG).show();
         } else {

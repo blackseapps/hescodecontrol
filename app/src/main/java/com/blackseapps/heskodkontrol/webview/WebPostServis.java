@@ -91,13 +91,15 @@ public class WebPostServis {
         return new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                if (!response.trim().equals("\"hata\"")) {
-                    System.out.println("LOG: postLoginInfo Success");
+                System.out.println("LOG: "+response);
 
+                if (!response.trim().equals("\"hata\"")) {
+
+                    System.out.println("LOG: postLoginInfo Success");
 
                     String username = response.replace("\"", "");
 
-                    sharedPreference.setLoginInfo(tc, password, username, "camera_back");
+                    sharedPreference.setLoginInfo(tc, password, username, "input");
 
                     Intent intent = new Intent(context, Barkod.class);
                     context.startActivity(intent);

@@ -34,6 +34,7 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.blackseapps.heskodkontrol.Modal.Login;
 import com.blackseapps.heskodkontrol.Modal.Variables;
@@ -71,10 +72,11 @@ public class Barkod extends AppCompatActivity {
     private boolean index = true;
     private boolean index2 = true;
     private boolean KEYCODE_ENTER = false;
+    private int CameraClickCount = 0;
 
-    View container, container2, loading;
+    View container, container2;
     String TC, PASSWORD, USERNAME, LAST;
-    boolean CAMERA_FRONT = false;
+    boolean CAMERA_FRONT = true;
 
     public Barkod() {
 
@@ -87,11 +89,16 @@ public class Barkod extends AppCompatActivity {
             cameraSource.stop();
     }
 
-    private View.OnTouchListener otl = new View.OnTouchListener() {
-        public boolean onTouch(View v, MotionEvent event) {
-            return true; // the listener has consumed the event
-        }
-    };
+    void showKeyboard() {
+        txtHesCode.post(new Runnable() {
+            @Override
+            public void run() {
+                txtHesCode.requestFocus();
+            }
+        });
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(txtHesCode, InputMethodManager.SHOW_FORCED);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,40 +114,62 @@ public class Barkod extends AppCompatActivity {
         barkod = findViewById(R.id.barkod);
         txtBarcodeValue = findViewById(R.id.txtBarcodeValue);
         mWebView = findViewById(R.id.webView);
-        loading = findViewById(R.id.loading);
 
-        sharedInit();
 
         txtHesCode.setFilters(new InputFilter[]{new InputFilter.AllCaps()}); //Txt Uppper
         txtHesCode.setOnKeyListener(keyListenerEnterCode); //Enter Code
 
-        /** Hide Keyboard */
-        container.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardEvents.hide(Barkod.this);
-            }
-        });
-        container2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardEvents.hide(Barkod.this);
-            }
-        });
-        txtHesCode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardEvents.hide(Barkod.this);
-            }
-        });
 
-        txtHesCode.setOnTouchListener(otl);
+        txtHesCode.addTextChangedListener(new TextWatcher() {
 
+            public void afterTextChanged(Editable s) {
+            }
+
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
+                // Toast.makeText(Barkod.this, "KEY 1: " + s.toString().substring(0, s.length() - 1), Toast.LENGTH_LONG).show();
+
+                if (s.toString().indexOf(";") >= 0 || s.toString().indexOf("|") >= 0) {
+
+
+                    boolean hes_1 = false, hes_2 = false;
+                    if (s.toString().indexOf(";") >= 0)
+                        if (s.toString().split(";").length > 1)
+                            if (s.toString().split(";")[1].length() >= 10)
+                                hes_1 = true;
+
+                    if (s.toString().indexOf("|") >= 0)
+                        if (s.toString().split("\\|").length > 1)
+                        if (s.toString().split("\\|")[1].length() >= 10)
+                            hes_2 = true;
+
+
+                    if (hes_1 || hes_2) {
+                        sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "input");
+                        if (s.toString().indexOf(";") >= 0)
+                            sendhescode(s.toString().split(";")[1]);
+                        else if (s.toString().indexOf("|") >= 0)
+                            sendhescode(s.toString().split("\\|")[1]);
+                    }
+                }
+            }
+        });
 
         txtHesCode.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
+
+                if ((actionId == EditorInfo.IME_ACTION_SEARCH ||
+                        actionId == EditorInfo.IME_ACTION_DONE ||
+                        actionId == KeyEvent.ACTION_DOWN ||
+                        actionId == EditorInfo.IME_NULL ||
+                        actionId == EditorInfo.IME_ACTION_NEXT ||
+                        actionId == EditorInfo.IME_ACTION_SEND ||
+                        actionId == KeyEvent.KEYCODE_ENTER)) {
 
 
                     if (txtHesCode.getText().toString().equals("0000000000")) {
@@ -159,16 +188,22 @@ public class Barkod extends AppCompatActivity {
                         sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "input");
                         sendhescode(txtHesCode.getText().toString().split(";")[1]);
                     }
-
-                    KeyboardEvents.hide(Barkod.this);
-
                 }
                 return false;
             }
         });
 
+        sharedInit();
         CameraOrInput();
         SingControl();
+
+        showKeyboard();
+
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                showKeyboard();
+            }
+        }, 3500);
 
     }
 
@@ -178,6 +213,8 @@ public class Barkod extends AppCompatActivity {
         PASSWORD = sharedPreference.getLoginInfo().getPassword();
         USERNAME = sharedPreference.getLoginInfo().getUsername();
         LAST = sharedPreference.getLoginInfo().getLast();
+
+        System.out.println("LOG Last:" + LAST);
 
         if (LAST.indexOf("_") > 0)
             if (LAST.split("_")[1].equals("front"))
@@ -189,7 +226,6 @@ public class Barkod extends AppCompatActivity {
 
     private void CameraOrInput() {
 
-        System.out.println("LOG:" + LAST);
 
         if (LAST.split("_")[0].equals("camera")) {
             CameraOpen(CAMERA_FRONT);
@@ -199,19 +235,28 @@ public class Barkod extends AppCompatActivity {
 
     public void _clickCamera(View view) {
 
-        if (CAMERA_FRONT) {
-            CAMERA_FRONT = false;
-            sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_back");
+        BarkodOpen();
+        LAST = sharedPreference.getLoginInfo().getLast();
+
+        if (!LAST.equals("input")) {
+            if (CAMERA_FRONT) {
+                CameraOpen(false);
+                CAMERA_FRONT = false;
+                sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_back");
+
+            } else {
+                CAMERA_FRONT = true;
+                sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_front");
+
+                CameraOpen(true);
+            }
         } else {
-            CAMERA_FRONT = true;
-            sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "camera_front");
+            CameraOpen(CAMERA_FRONT);
+            sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, CAMERA_FRONT ? "camera_front" : "camera_back");
         }
 
-        BarkodOpen();
-        CameraOpen(CAMERA_FRONT);
+        showKeyboard();
 
-
-        System.out.println("LOG:" + sharedPreference.getLoginInfo().getLast());
 
     }
 
@@ -224,11 +269,8 @@ public class Barkod extends AppCompatActivity {
         barkod.setImageResource(R.drawable.barkod_kucuk);
         camera.getLayoutParams().height = intToDp(84);
         camera.getLayoutParams().width = intToDp(84);
-        ;
         barkod.getLayoutParams().height = intToDp(64);
-        ;
         barkod.getLayoutParams().width = intToDp(64);
-        ;
     }
 
     int intToDp(int px) {
@@ -239,7 +281,7 @@ public class Barkod extends AppCompatActivity {
 
     private void BarkodOpen() {
         if (!toggle && toggle2) return;
-        KeyboardEvents.hide(this);
+
         surfaceView.setVisibility(View.GONE);
         imageView.setVisibility(View.VISIBLE);
 
@@ -249,29 +291,23 @@ public class Barkod extends AppCompatActivity {
         toggle = false;
         toggle2 = false;
 
-        txtHesCode.post(new Runnable() {
-            @Override
-            public void run() {
-                txtHesCode.requestFocus();
-            }
-        });
 
         barkod.setImageResource(R.drawable.barkod_buyuk);
         camera.setImageResource(R.drawable.kamera_kucuk);
         barkod.getLayoutParams().height = intToDp(84);
-        ;
         barkod.getLayoutParams().width = intToDp(84);
-        ;
         camera.getLayoutParams().height = intToDp(64);
-        ;
         camera.getLayoutParams().width = intToDp(64);
-        ;
+
+        showKeyboard();
+
     }
 
     public void _clickBarkod(View view) {
+        CameraClickCount = 0;
         sharedPreference.setLoginInfo(TC, PASSWORD, USERNAME, "input");
-
         BarkodOpen();
+
     }
 
     public void _openKeyboard(View view) {
@@ -313,7 +349,7 @@ public class Barkod extends AppCompatActivity {
     }
 
     public void _iptal(View view) {
-        loading.setVisibility(View.GONE);
+
         Variables.LOADING_STATUS = false;
     }
 
@@ -430,7 +466,7 @@ public class Barkod extends AppCompatActivity {
                             public void onReceiveValue(String s) {
                                 view.loadUrl(Variables.E_DEVLET_QUERY_RESPONSE_JS_CODE());
                                 view.loadUrl(Variables.E_DEVLET_QUERY_NOT_RESPONSE_JS_CODE());
-                                loading.setVisibility(View.GONE);
+
                             }
                         });
                     }

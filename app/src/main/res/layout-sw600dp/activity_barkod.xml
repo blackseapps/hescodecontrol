@@ -51,9 +51,10 @@
             android:hint="HES Kodu"
             android:inputType="textCapCharacters"
             android:lines="1"
-            android:imeOptions="actionDone"
             android:maxLines="1"
             android:singleLine="true"
+
+            android:imeOptions="actionDone"
             android:textAllCaps="true"
             android:textSize="25sp">
 
@@ -74,13 +75,12 @@
     </LinearLayout>
 
 
-
     <ImageView
         android:id="@+id/image"
         android:layout_width="wrap_content"
-        android:layout_height="210dp"
+        android:layout_height="280dp"
         android:layout_below="@id/hesview"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="50dp"
         android:background="@color/bgcolor"
         android:src="@drawable/barkod_orta"
         android:visibility="visible"></ImageView>
@@ -88,8 +88,9 @@
     <LinearLayout
         android:id="@+id/container2"
         android:layout_width="match_parent"
-        android:layout_height="130dp"
-       android:layout_alignParentBottom="true"        android:layout_marginTop="50dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="50dp"
         android:background="@color/bgcolor"
         android:gravity="center"
         android:orientation="horizontal">
@@ -126,8 +127,6 @@
 
         </Button>
     </LinearLayout>
-
-
 
 
     <TextView

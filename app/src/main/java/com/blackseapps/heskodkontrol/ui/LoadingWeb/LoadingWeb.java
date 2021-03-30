@@ -17,6 +17,7 @@ import com.blackseapps.heskodkontrol.Modal.Variables;
 import com.blackseapps.heskodkontrol.R;
 import com.blackseapps.heskodkontrol.ui.Barkod.Barkod;
 import com.blackseapps.heskodkontrol.ui.Result.Result;
+import com.blackseapps.heskodkontrol.utils.KeyboardEvents;
 import com.blackseapps.heskodkontrol.webview.WebApp;
 
 public class LoadingWeb extends AppCompatActivity {
@@ -34,6 +35,7 @@ public class LoadingWeb extends AppCompatActivity {
         setContentView(R.layout.activity_loading_web);
 
         mWebView = findViewById(R.id.webView);
+        KeyboardEvents.hide(this);
 
         Intent intent = getIntent();
         if (intent.getStringExtra("hesCode") == null)
@@ -119,10 +121,10 @@ public class LoadingWeb extends AppCompatActivity {
     }
 
     public void _iptal(View view) {
-        Variables.LOADING_STATUS = false;
-        Intent intent = new Intent(this, Barkod.class);
-        startActivity(intent);
-        finish();
+//        Variables.LOADING_STATUS = false;
+//        Intent intent = new Intent(this, Barkod.class);
+//        startActivity(intent);
+//        finish();
     }
 
     @Override

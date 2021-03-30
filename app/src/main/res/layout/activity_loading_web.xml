@@ -29,6 +29,7 @@
         android:layout_height="wrap_content"
         android:background="#FFFF"
         android:text="İptal"
+        android:visibility="gone"
         android:layout_marginTop="100dp"
         android:textColor="#000000">
 

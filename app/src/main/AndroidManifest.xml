@@ -31,6 +31,7 @@
             android:noHistory="true"
             android:configChanges="orientation"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden"
             android:theme="@style/NoActionBarTheme"></activity>
         <activity
             android:name=".ui.Result.Result"
@@ -46,6 +47,7 @@
             android:configChanges="orientation"
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBarTheme"
+            android:windowSoftInputMode="adjustResize"
            />
 
         <activity
@@ -54,7 +56,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBarTheme"
             android:noHistory="true"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
